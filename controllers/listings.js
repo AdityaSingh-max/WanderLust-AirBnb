@@ -5,7 +5,60 @@ const mapToken = process.env.MAP_TOKEN;
 const geocodingClient = mbxGeocoding({ accessToken: mapToken });
 
 module.exports.index = async(req,res) => {
-    const allListings = await Listing.find({});
+    // const allListings = await Listing.find({});
+    const {
+        search,
+        category,
+        // minPrice,
+        // maxPrice
+    } = req.query;
+
+    let query = {};
+
+    if (search) {
+        query.$or = [
+            {
+                title: {
+                    $regex: search,
+                    $options: "i",
+                },
+            },
+            {
+                location: {
+                    $regex: search,
+                    $options: "i",
+                },
+            },
+            {
+                country: {
+                    $regex: search,
+                    $options: "i",
+                },
+            },
+            {
+                description: {
+                    $regex: search,
+                    $options: "i",
+                },
+            },
+        ];
+    }
+
+    if (category) {
+        query.category = category;
+    }
+//
+    // if (minPrice || maxPrice) {
+    // query.price = {};
+    // if (minPrice) {
+    //     query.price.$gte = Number(minPrice);
+    // }
+    // if (maxPrice) {
+    //     query.price.$lte = Number(maxPrice);
+    // }
+// }
+
+    const allListings = await Listing.find(query);
     res.render("listings/index.ejs", {allListings});
 };
 
@@ -56,7 +109,7 @@ module.exports.renderEditForm = async(req,res) => {
     const listing = await Listing.findById(id);
     if(!listing){
         req.flash("error", "Listing you requested for does not exist!");
-        res.redirect("/listings");
+        return res.redirect("/listings");
     }
     let originalImageUrl = listing.image.url;
     originalImageUrl = originalImageUrl.replace("/upload", "/upload/h_300,w_250,c_fill");
